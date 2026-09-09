@@ -73,7 +73,7 @@ fun QrScannerView(onScanned: (String) -> Unit, onCancel: () -> Unit) {
 }
 
 @Composable
-@ExperimentalGetImage
+@androidx.annotation.OptIn(ExperimentalGetImage::class)
 private fun CameraPreview(onScanned: (String) -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
