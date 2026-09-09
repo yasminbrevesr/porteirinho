@@ -44,14 +44,18 @@ class PatrolRepository(
             val block = LocationNodeEntity("block-demo", property.id, "BLOCK", "Bloco A", updatedAtEpochMillis = now)
             val floor = LocationNodeEntity("floor-demo", block.id, "FLOOR", "Térreo", updatedAtEpochMillis = now)
             val place = LocationNodeEntity("place-demo", floor.id, "PLACE", "Áreas comuns", updatedAtEpochMillis = now)
-            listOf(property, block, floor, place).forEach(directoryDao::upsertLocation)
+            for (node in listOf(property, block, floor, place)) {
+                directoryDao.upsertLocation(node)
+            }
 
             val checkpoints = listOf(
                 CheckpointEntity("checkpoint-gate", place.id, "Portão principal", sequenceHint = 1, updatedAtEpochMillis = now),
                 CheckpointEntity("checkpoint-garage", place.id, "Garagem", sequenceHint = 2, minimumTravelSecondsFromPrevious = 45, updatedAtEpochMillis = now),
                 CheckpointEntity("checkpoint-hall", place.id, "Hall do Bloco A", sequenceHint = 3, minimumTravelSecondsFromPrevious = 60, updatedAtEpochMillis = now),
             )
-            checkpoints.forEach(directoryDao::upsertCheckpoint)
+            for (checkpoint in checkpoints) {
+                directoryDao.upsertCheckpoint(checkpoint)
+            }
             checkpoints.forEachIndexed { index, checkpoint ->
                 val credentialId = "qr-demo-${index + 1}"
                 val raw = "porteirinho:v1:$credentialId:DEMO-${checkpoint.id.uppercase()}-2026"
@@ -157,8 +161,10 @@ class PatrolRepository(
         return items
     }
 
-    suspend fun resumePatrol(userId: String): ActivePatrolSnapshot? =
-        patrolDao.activeExecution(userId)?.let(::snapshot)
+    suspend fun resumePatrol(userId: String): ActivePatrolSnapshot? {
+        val execution = patrolDao.activeExecution(userId) ?: return null
+        return snapshot(execution)
+    }
 
     suspend fun startPatrol(userId: String, scheduleId: String): Result<ActivePatrolSnapshot> = runCatching {
         resumePatrol(userId)?.let { return@runCatching it }
