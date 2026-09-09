@@ -108,31 +108,48 @@ fun PorteirinhoApp(viewModel: AppViewModel) {
 @Composable
 private fun AreaChoiceScreen(onChoose: (String) -> Unit) {
     Column(
-        Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(24.dp),
-        verticalArrangement = Arrangement.Center,
+        Modifier.fillMaxSize().navigationBarsPadding(),
     ) {
-        Surface(color = MaterialTheme.colorScheme.primary, shape = RoundedCornerShape(18.dp), modifier = Modifier.size(64.dp)) {
-            Box(contentAlignment = Alignment.Center) { Text("P", color = Color.White, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold) }
+        Surface(
+            color = MaterialTheme.colorScheme.primary,
+            shape = RoundedCornerShape(0.dp, 0.dp, 36.dp, 36.dp),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Column(Modifier.statusBarsPadding().padding(horizontal = 24.dp, vertical = 34.dp)) {
+                Surface(color = Color.White, shape = RoundedCornerShape(18.dp), modifier = Modifier.size(64.dp)) {
+                    Box(contentAlignment = Alignment.Center) { Text("P", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold) }
+                }
+                Spacer(Modifier.height(24.dp))
+                Text("Porteirinho", color = Color.White, style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
+                Text("Rondas comprovadas, mesmo sem internet.", color = Color.White.copy(alpha = 0.88f), style = MaterialTheme.typography.titleMedium)
+            }
         }
-        Spacer(Modifier.height(24.dp))
-        Text("Porteirinho", style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
-        Text("Rondas comprovadas, mesmo sem internet.", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Spacer(Modifier.height(48.dp))
-        AreaCard("PORTARIA", "Iniciar turno e executar rondas") { onChoose(UserRole.GATEKEEPER) }
-        Spacer(Modifier.height(16.dp))
-        AreaCard("ADMINISTRAÇÃO", "Acompanhar operação, alertas e cadastros") { onChoose(UserRole.ADMIN) }
-        Spacer(Modifier.height(28.dp))
-        Text("Dados operacionais permanecem salvos neste aparelho até a confirmação do servidor.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Column(Modifier.padding(24.dp)) {
+            SectionHeading("Escolha seu acesso", "Cada área mostra apenas o necessário para o perfil.")
+            Spacer(Modifier.height(24.dp))
+            AreaCard("PORTARIA", "Iniciar turno e executar rondas") { onChoose(UserRole.GATEKEEPER) }
+            Spacer(Modifier.height(16.dp))
+            AreaCard("ADMINISTRAÇÃO", "Acompanhar operação, alertas e cadastros") { onChoose(UserRole.ADMIN) }
+            Spacer(Modifier.height(28.dp))
+            Text("Dados operacionais permanecem salvos neste aparelho até a confirmação do servidor.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
     }
 }
 
 @Composable
 private fun AreaCard(title: String, subtitle: String, onClick: () -> Unit) {
-    Card(Modifier.fillMaxWidth().clickable(onClick = onClick), shape = RoundedCornerShape(20.dp)) {
-        Column(Modifier.padding(22.dp)) {
-            Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-            Spacer(Modifier.height(6.dp))
-            Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    HardShadowCard(Modifier.fillMaxWidth().clickable(onClick = onClick), containerColor = MaterialTheme.colorScheme.surfaceVariant) {
+        Row(Modifier.padding(22.dp), verticalAlignment = Alignment.CenterVertically) {
+            Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primary, modifier = Modifier.size(44.dp)) {
+                Box(contentAlignment = Alignment.Center) { Text(if (title == "PORTARIA") "P" else "A", color = Color.White, fontWeight = FontWeight.Bold) }
+            }
+            Spacer(Modifier.width(16.dp))
+            Column(Modifier.weight(1f)) {
+                Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                Spacer(Modifier.height(4.dp))
+                Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Text("›", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary)
         }
     }
 }
@@ -142,8 +159,8 @@ private fun ProfileChoiceScreen(role: String, users: List<UserEntity>, onProfile
     ScreenColumn(title = if (role == UserRole.ADMIN) "Administração" else "Quem está na portaria?", onBack = onBack) {
         if (users.isEmpty()) Text("Nenhum perfil ativo disponível.")
         users.forEach { user ->
-            Card(Modifier.fillMaxWidth().clickable { onProfile(user.id) }.padding(vertical = 6.dp)) {
-                Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            HardShadowCard(Modifier.fillMaxWidth().clickable { onProfile(user.id) }.padding(vertical = 6.dp), containerColor = MaterialTheme.colorScheme.surfaceVariant) {
+                Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
                     Initials(user.displayName)
                     Spacer(Modifier.width(16.dp))
                     Column {
@@ -176,9 +193,7 @@ private fun PinLoginScreen(user: UserEntity?, busy: Boolean, onLogin: (String) -
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(Modifier.height(16.dp))
-        Button(onClick = { onLogin(pin) }, enabled = pin.length >= 4 && !busy, modifier = Modifier.fillMaxWidth().height(54.dp)) {
-            Text("Entrar")
-        }
+        BrandButton("Entrar", { onLogin(pin) }, enabled = pin.length >= 4 && !busy, modifier = Modifier.fillMaxWidth())
         Text("Ambiente de demonstração: PIN 1234", Modifier.padding(top = 14.dp), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
@@ -195,45 +210,62 @@ private fun GatekeeperHomeScreen(
     onStartPatrol: (String) -> Unit,
     onExit: () -> Unit,
 ) {
-    LazyColumn(Modifier.fillMaxSize().statusBarsPadding(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+    val firstName = user?.displayName?.substringBefore(' ') ?: "Porteiro"
+    val initials = user?.displayName?.split(' ')?.take(2)?.mapNotNull { it.firstOrNull()?.uppercase() }?.joinToString("") ?: "P"
+    LazyColumn(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text("Olá, ${user?.displayName?.substringBefore(' ') ?: "porteiro"}", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                    Text(if (shiftActive) "Turno em andamento" else "Turno ainda não iniciado", color = if (shiftActive) Color(0xFF16875A) else MaterialTheme.colorScheme.onSurfaceVariant)
+            SummaryHero(
+                eyebrow = "Resumo do turno",
+                title = "Olá, $firstName",
+                description = "Acompanhe sua operação na portaria",
+                badge = if (shiftActive) "Turno em andamento" else "Aguardando início do turno",
+                initials = initials,
+                modifier = Modifier.statusBarsPadding(),
+            )
+        }
+        item {
+            Column(Modifier.padding(horizontal = 24.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    MetricTile(patrols.size.toString(), "rondas disponíveis", "R", Modifier.weight(1f))
+                    MetricTile(pendingSync.toString(), "eventos pendentes", "S", Modifier.weight(1f), MaterialTheme.colorScheme.tertiary)
+                    MetricTile(if (shiftActive) "ON" else "OFF", "status do turno", "T", Modifier.weight(1f), Color(0xFF058E3F))
                 }
+            }
+        }
+        if (!shiftActive) {
+            item {
+                Column(Modifier.padding(horizontal = 24.dp)) {
+                    BrandButton("Iniciar turno", onStartShift, enabled = !busy, modifier = Modifier.fillMaxWidth())
+                }
+            }
+        } else {
+            item { SectionHeading("Rondas disponíveis", "Programações liberadas para este horário", Modifier.padding(horizontal = 24.dp)) }
+            if (patrols.isEmpty()) item { Text("Nenhuma ronda disponível para este perfil e horário.", Modifier.padding(horizontal = 24.dp)) }
+            items(patrols, key = { it.schedule.id }) { patrol ->
+                Box(Modifier.padding(horizontal = 24.dp)) { PatrolCard(patrol, onStartPatrol) }
+            }
+            item {
+                OutlinedButton(onClick = onFinishShift, modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp)) { Text("Encerrar turno") }
+            }
+        }
+        item {
+            Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                SyncBadge(pendingSync)
                 TextButton(onClick = onExit) { Text("Sair") }
             }
         }
-        item { SyncBadge(pendingSync) }
-        if (!shiftActive) {
-            item {
-                Button(onClick = onStartShift, enabled = !busy, modifier = Modifier.fillMaxWidth().height(58.dp)) { Text("Iniciar turno") }
-            }
-        } else {
-            item { Text("Rondas disponíveis", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) }
-            if (patrols.isEmpty()) item { Text("Nenhuma ronda disponível para este perfil e horário.") }
-            items(patrols, key = { it.schedule.id }) { patrol ->
-                PatrolCard(patrol, onStartPatrol)
-            }
-            item {
-                OutlinedButton(onClick = onFinishShift, modifier = Modifier.fillMaxWidth()) { Text("Encerrar turno") }
-            }
-        }
-        item { Spacer(Modifier.navigationBarsPadding()) }
+        item { Spacer(Modifier.navigationBarsPadding().height(8.dp)) }
     }
 }
 
 @Composable
 private fun PatrolCard(patrol: AvailablePatrol, onStart: (String) -> Unit) {
-    Card(shape = RoundedCornerShape(18.dp), modifier = Modifier.fillMaxWidth()) {
+    HardShadowCard(modifier = Modifier.fillMaxWidth(), containerColor = MaterialTheme.colorScheme.surfaceVariant) {
         Column(Modifier.padding(18.dp)) {
             Text(patrol.schedule.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             Text("${patrol.windowLabel}  •  ${patrol.pointCount} pontos", color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.height(14.dp))
-            Button(onClick = { onStart(patrol.schedule.id) }, enabled = patrol.availableNow, modifier = Modifier.fillMaxWidth()) {
-                Text(if (patrol.availableNow) "Iniciar ronda" else "Fora do horário")
-            }
+            BrandButton(if (patrol.availableNow) "Iniciar ronda" else "Fora do horário", { onStart(patrol.schedule.id) }, enabled = patrol.availableNow, modifier = Modifier.fillMaxWidth())
         }
     }
 }
@@ -250,13 +282,19 @@ private fun PatrolScreen(patrol: ActivePatrolSnapshot?, busy: Boolean, onScan: (
     }
     val minutes = elapsed / 60_000
     val seconds = (elapsed / 1_000) % 60
-    LazyColumn(Modifier.fillMaxSize().statusBarsPadding(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+    LazyColumn(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item {
-            Text(patrol.scheduleName, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-            Text("Em andamento • %02d:%02d".format(minutes, seconds), color = MaterialTheme.colorScheme.primary)
+            SummaryHero(
+                eyebrow = "Ronda em andamento",
+                title = patrol.scheduleName,
+                description = "Confirme cada ponto pelo QR Code",
+                badge = "Tempo  •  %02d:%02d".format(minutes, seconds),
+                initials = "R",
+                modifier = Modifier.statusBarsPadding(),
+            )
         }
         item {
-            Card(Modifier.fillMaxWidth()) {
+            HardShadowCard(Modifier.fillMaxWidth().padding(horizontal = 24.dp), containerColor = MaterialTheme.colorScheme.surfaceVariant) {
                 Column(Modifier.padding(20.dp)) {
                     Text("${patrol.completedPoints} de ${patrol.totalPoints} pontos concluídos", fontWeight = FontWeight.SemiBold)
                     Spacer(Modifier.height(10.dp))
@@ -265,19 +303,22 @@ private fun PatrolScreen(patrol: ActivePatrolSnapshot?, busy: Boolean, onScan: (
                 }
             }
         }
+        item { SectionHeading("Pontos da ronda", "Siga a sequência e confirme presencialmente", Modifier.padding(horizontal = 24.dp)) }
         items(patrol.checkpointNames, key = { it.first }) { (id, name) ->
             val done = id in patrol.visitedPointIds
-            Row(Modifier.fillMaxWidth().background(if (done) Color(0xFFE0F4EA) else MaterialTheme.colorScheme.surface, RoundedCornerShape(14.dp)).padding(16.dp)) {
+            Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp).background(if (done) Color(0xFFE4F2E8) else MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(16.dp)).padding(16.dp)) {
                 Text(if (done) "✓" else "○", color = if (done) Color(0xFF16875A) else MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.width(12.dp))
                 Text(name, fontWeight = if (done) FontWeight.SemiBold else FontWeight.Normal)
             }
         }
         item {
-            Button(onClick = onScan, enabled = !busy && patrol.completedPoints < patrol.totalPoints, modifier = Modifier.fillMaxWidth().height(58.dp)) { Text("Escanear QR Code") }
+            Column(Modifier.padding(horizontal = 24.dp)) {
+                BrandButton("Escanear QR Code", onScan, enabled = !busy && patrol.completedPoints < patrol.totalPoints, modifier = Modifier.fillMaxWidth())
+            }
         }
         item {
-            OutlinedButton(onClick = onFinish, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
+            OutlinedButton(onClick = onFinish, enabled = !busy, modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp)) {
                 Text(if (patrol.completedPoints < patrol.totalPoints) "Finalizar como incompleta" else "Finalizar ronda")
             }
         }
@@ -295,41 +336,48 @@ private fun AdminDashboardScreen(
     onAlerts: () -> Unit,
     onExit: () -> Unit,
 ) {
-    LazyColumn(Modifier.fillMaxSize().statusBarsPadding(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+    LazyColumn(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text("Administração", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                    Text("Visão operacional deste dispositivo", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            SummaryHero(
+                eyebrow = "Resumo",
+                title = "Administração",
+                description = "Acompanhe a operação e as pendências",
+                badge = if (permanentFailures > 0) "$permanentFailures falhas exigem atenção" else "Operação monitorada",
+                initials = "AD",
+                modifier = Modifier.statusBarsPadding(),
+            )
+        }
+        item {
+            Column(Modifier.padding(horizontal = 24.dp)) {
+                SectionHeading("Visão geral", "Indicadores salvos neste dispositivo")
+                Spacer(Modifier.height(16.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    MetricTile(executionCount.toString(), "rondas", "R", Modifier.weight(1f))
+                    MetricTile(problemCount.toString(), "com alerta", "!", Modifier.weight(1f), MaterialTheme.colorScheme.error)
+                    MetricTile(pendingSync.toString(), "para sincronizar", "S", Modifier.weight(1f), MaterialTheme.colorScheme.tertiary)
                 }
-                TextButton(onClick = onExit) { Text("Sair") }
             }
         }
-        item {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                KpiCard("Rondas", executionCount.toString(), Modifier.weight(1f))
-                KpiCard("Com alerta", problemCount.toString(), Modifier.weight(1f))
-            }
-        }
-        item {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                KpiCard("Pendentes", pendingSync.toString(), Modifier.weight(1f))
-                KpiCard("Falhas", permanentFailures.toString(), Modifier.weight(1f), permanentFailures > 0)
-            }
-        }
-        item { AdminMenuCard("Central de alertas", "$unresolvedAlerts alertas não resolvidos", onAlerts) }
-        item { AdminMenuCard("Locais e pontos", "Condomínio → bloco → andar → local → QR", {}) }
-        item { AdminMenuCard("Programações", "Horários, tolerância, pontos e responsáveis", {}) }
-        item { AdminMenuCard("Porteiros e dispositivos", "Perfis, bloqueios e aparelhos autorizados", {}) }
-        item { AdminMenuCard("Histórico e auditoria", "Linha do tempo e alterações administrativas", {}) }
+        item { SectionHeading("Atalhos", "Gerencie os principais módulos", Modifier.padding(horizontal = 24.dp)) }
+        item { Box(Modifier.padding(horizontal = 24.dp)) { AdminMenuCard("Central de alertas", "$unresolvedAlerts alertas não resolvidos", onAlerts) } }
+        item { Box(Modifier.padding(horizontal = 24.dp)) { AdminMenuCard("Locais e pontos", "Condomínio → bloco → andar → local → QR", {}) } }
+        item { Box(Modifier.padding(horizontal = 24.dp)) { AdminMenuCard("Programações", "Horários, tolerância, pontos e responsáveis", {}) } }
+        item { Box(Modifier.padding(horizontal = 24.dp)) { AdminMenuCard("Porteiros e dispositivos", "Perfis, bloqueios e aparelhos autorizados", {}) } }
+        item { Box(Modifier.padding(horizontal = 24.dp)) { AdminMenuCard("Histórico e auditoria", "Linha do tempo e alterações administrativas", {}) } }
         item {
             Text(
                 "Os cadastros completos serão habilitados quando o projeto Supabase for conectado. O painel já acompanha a operação offline deste aparelho.",
+                modifier = Modifier.padding(horizontal = 24.dp),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        item { Spacer(Modifier.navigationBarsPadding()) }
+        item {
+            Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp), horizontalArrangement = Arrangement.End) {
+                TextButton(onClick = onExit) { Text("Sair da administração") }
+            }
+        }
+        item { Spacer(Modifier.navigationBarsPadding().height(8.dp)) }
     }
 }
 
@@ -352,21 +400,14 @@ private fun AlertsScreen(alerts: List<AlertEntity>, onResolve: (String) -> Unit,
 }
 
 @Composable
-private fun KpiCard(label: String, value: String, modifier: Modifier, danger: Boolean = false) {
-    Card(modifier, colors = CardDefaults.cardColors(containerColor = if (danger) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surface)) {
-        Column(Modifier.padding(16.dp)) {
-            Text(value, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-            Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-    }
-}
-
-@Composable
 private fun AdminMenuCard(title: String, subtitle: String, onClick: () -> Unit) {
-    Card(Modifier.fillMaxWidth().clickable(onClick = onClick)) {
-        Column(Modifier.padding(18.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    HardShadowCard(Modifier.fillMaxWidth().clickable(onClick = onClick), containerColor = MaterialTheme.colorScheme.surfaceVariant) {
+        Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Text("›", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.primary)
         }
     }
 }
